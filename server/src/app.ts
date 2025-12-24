@@ -9,7 +9,13 @@ import { ResultSetHeader, RowDataPacket } from "mysql2";
 import z from "zod";
 export const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:4173"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 app.get('/api/products', async (req, res) => {

@@ -1,6 +1,4 @@
-import * as React from "react"
 import { useForm } from "@tanstack/react-form"
-import { toast } from "sonner"
 import * as z from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -25,57 +23,46 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@/components/ui/input-group"
+import type { Product } from "@/types/product"
 
 const formSchema = z.object({
   name: z
     .string()
-    .min(5, "product name must be at least 5 characters.")
+    .min(3, "product name must be at least 3 characters.")
     .max(40, "product name must be at most 40 characters."),
   description: z
     .string()
     .min(20, "Description must be at least 20 characters.")
-    .max(100, "Description must be at most 100 characters."),
-  price: z.number().positive(),
-  image: z.url()
+    .max(100, "Description must be at most 100 characters.").or(z.literal("")),
+  price: z.coerce.number(),
+  image: z.url().optional().or(z.literal("")).default("")
 })
 
-export function CreateProductForm() {
+export function CreateProductForm({ product, handleSubmit }: { product?: Product, handleSubmit: (value: { name: string, description?: string, price?: number, image?: string }) => Promise<void> }) {
   const form = useForm({
     defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      image: ""
+      name: product ? product.name : "",
+      description: product ? product.description : "",
+      price: product ? product.price : 0,
+      image: product ? product.image_url : ""
     },
     validators: {
       onSubmit: formSchema,
     },
     onSubmit: async ({ value }) => {
-      toast("You submitted the following values:", {
-        description: (
-          <pre className="bg-code text-code-foreground mt-2 w-[320px] overflow-x-auto rounded-md p-4">
-            <code>{JSON.stringify(value, null, 2)}</code>
-          </pre>
-        ),
-        position: "bottom-right",
-        classNames: {
-          content: "flex flex-col gap-2",
-        },
-        style: {
-          "--border-radius": "calc(var(--radius)  + 4px)",
-        } as React.CSSProperties,
-      })
+      await handleSubmit(value)
     },
   })
 
   return (
-    <Card className="w-full  sm:max-w-md">
+    <Card className="w-full pt-6 mx-auto sm:max-w-md">
       <CardHeader>
         <CardTitle>Create Product</CardTitle>
       </CardHeader>
       <CardContent>
         <form
           id="create-product-form"
+          className="mx-auto min-w-full"
           onSubmit={(e) => {
             e.preventDefault()
             form.handleSubmit()
@@ -156,6 +143,7 @@ export function CreateProductForm() {
                       id={field.name}
                       name={field.name}
                       value={field.state.value}
+                      type="number"
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(Number(e.target.value))}
                       aria-invalid={isInvalid}
