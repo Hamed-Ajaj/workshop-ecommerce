@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors"
-import { createProductSchema, updateProductSchema } from "./schemas/products.schema";
+import { createProductSchema, querySchema, updateProductSchema } from "./schemas/products.schema";
 import validate from 'express-zod-safe';
 import { db } from "./db";
 import { StatusCodes } from "http-status-codes";
@@ -18,12 +18,34 @@ app.use(
 );
 app.use(express.json());
 
-app.get('/api/products', async (req, res) => {
+app.get('/api/products', validate({ query: querySchema }), async (req, res) => {
+
+  const { search, order, sort } = req.query;
 
   try {
-    const sql = 'SELECT * FROM products ORDER BY created_at DESC';
-    const [rows] = await db.query<(Product & RowDataPacket)[]>(sql);
-    res.status(StatusCodes.OK).json({ products: rows, success: true })
+    let sql = "SELECT * FROM products"
+    const params: any[] = []
+
+    if (search) {
+      sql += " WHERE name LIKE ? OR description LIKE ?"
+      params.push(`%${search}%`, `%${search}%`)
+    }
+
+    if (sort === "price") {
+      sql += ` ORDER BY price ${order}`
+    } else {
+      sql += ` ORDER BY created_at ${order}`
+    }
+
+    const [rows] = await db.query<(Product & RowDataPacket)[]>(
+      sql,
+      params
+    )
+
+    res.status(StatusCodes.OK).json({
+      products: rows,
+      success: true,
+    })
   }
   catch (error) {
     console.error("Error fetching products:", error)

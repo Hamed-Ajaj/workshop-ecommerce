@@ -12,18 +12,18 @@ const ProductList = () => {
   const [loading, setLoading] = useState(false)
   const [sortBy, setSortBy] = useState<string>()
   const [search, setSearch] = useState<string>()
+  const [order, setOrder] = useState<"asc" | "desc">("asc")
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    const res = await fetch("http://localhost:4000/api/products")
+    const data = await res.json()
+    setProducts(data.products)
+    setLoading(false)
+  }
+
   useEffect(() => {
-
-    const fetchProducts = async () => {
-      setLoading(true)
-      const res = await fetch("http://localhost:4000/api/products")
-      const data = await res.json()
-      setProducts(data.products)
-      setLoading(false)
-    }
-
     fetchProducts()
-
   }, [])
 
   if (loading) {
@@ -49,7 +49,6 @@ const ProductList = () => {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
               <SelectItem value="price">Price</SelectItem>
               <SelectItem value="created_at">Newest</SelectItem>
             </SelectContent>
