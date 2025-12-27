@@ -36,7 +36,7 @@ const ProductDetails = () => {
       <Card className="mx-auto max-w-3xl overflow-hidden">
         {product?.image_url && (
           <img
-            src={product.image_url}
+            src={`http://localhost:4000${product.image_url}`}
             alt={product.name}
             className="h-80 w-full object-cover"
           />

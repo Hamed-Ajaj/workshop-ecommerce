@@ -34,7 +34,7 @@ const ProductCard = ({ product, onDelete }: { product: Product, onDelete: (id: n
     <Card key={product.id} className="flex flex-col">
       {product.image_url ? (
         <img
-          src={product.image_url}
+          src={`http://localhost:4000${product.image_url}`}
           alt={product.name}
           className="h-48 w-full rounded-t-lg object-cover"
         />

@@ -10,25 +10,35 @@ const ProductList = () => {
 
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
-  const [sortBy, setSortBy] = useState<string>()
+  const [sortBy, setSortBy] = useState<string>("newest")
   const [search, setSearch] = useState<string>()
   const [order, setOrder] = useState<"asc" | "desc">("asc")
 
   const fetchProducts = async () => {
     setLoading(true)
-    const res = await fetch("http://localhost:4000/api/products")
+
+    const params = new URLSearchParams()
+
+    if (search) params.append("search", search)
+    params.append("sort", sortBy)
+    params.append("order", order)
+
+    const res = await fetch(
+      `http://localhost:4000/api/products?${params.toString()}`
+    )
+
     const data = await res.json()
     setProducts(data.products)
     setLoading(false)
   }
 
   useEffect(() => {
-    fetchProducts()
-  }, [])
+    const timeout = setTimeout(() => {
+      fetchProducts()
+    }, 400)
 
-  if (loading) {
-    return <div>loading</div>
-  }
+    return () => clearTimeout(timeout)
+  }, [sortBy, search, order])
 
   return (
 
@@ -50,7 +60,7 @@ const ProductList = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="price">Price</SelectItem>
-              <SelectItem value="created_at">Newest</SelectItem>
+              <SelectItem value="newest">Newest</SelectItem>
             </SelectContent>
           </Select>
 
@@ -64,15 +74,37 @@ const ProductList = () => {
           </Button>
         </div>
       </div>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {products?.map((product) => (
-          <ProductCard key={product.id} product={product}
-            onDelete={(id) =>
-              setProducts((prev) => prev.filter((p) => p.id !== id))
-            }
-          />
-        ))}
-      </div>
+      {loading ? (
+        <p className="text-muted-foreground">Loading products...</p>
+      ) : search && products.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-lg font-medium">
+            No products found
+          </p>
+          <p className="text-sm text-muted-foreground">
+            No products match
+            {search ? (
+              <>
+                {" "}your search for <span className="font-medium">"{search}"</span>
+              </>
+            ) : (
+              " your criteria"
+            )}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onDelete={(id) =>
+                setProducts((prev) => prev.filter((p) => p.id !== id))
+              }
+            />
+          ))}
+        </div>
+      )}
     </main>
   )
 }

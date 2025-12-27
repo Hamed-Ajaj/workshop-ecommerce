@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors"
+import multer from "multer"
 import { createProductSchema, querySchema, updateProductSchema } from "./schemas/products.schema";
 import validate from 'express-zod-safe';
 import { db } from "./db";
@@ -17,6 +18,11 @@ app.use(
   }),
 );
 app.use(express.json());
+app.use("/uploads", express.static("uploads"))
+
+const upload = multer({
+  dest: "uploads/",
+})
 
 app.get('/api/products', validate({ query: querySchema }), async (req, res) => {
 
@@ -84,20 +90,35 @@ app.get('/api/products/:id', validate({
   }
 })
 
-app.post('/api/products', validate({ body: createProductSchema }), async (req, res) => {
-  const { name, description, price, image_url } = req.body;
-  try {
-    const sql = 'INSERT INTO products (name, description, price, image_url) VALUES (?, ?, ?, ?)';
-    const result = await db.query(sql, [name, description, price, image_url]);
-    res.status(StatusCodes.CREATED).json({ message: "product created succesfully", success: true })
-  }
-  catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: "Failed to create product",
-      success: false
-    })
-  }
-});
+app.post('/api/products',
+  upload.single("image"),
+  validate({ body: createProductSchema }), async (req, res) => {
+
+    console.log("BODY:", req.body)
+    console.log("FILE:", req.file)
+    const { name, description, price } = req.body;
+
+    if (req.file && !req.file.mimetype.startsWith("image/")) {
+      return res.status(400).json({ message: "Invalid file type" })
+    }
+
+    let image_url: string | null = null
+    if (req.file) {
+      image_url = `/uploads/${req.file.filename}`
+    }
+
+    try {
+      const sql = 'INSERT INTO products (name, description, price, image_url) VALUES (?, ?, ?, ?)';
+      const result = await db.query(sql, [name, description, price, image_url]);
+      res.status(StatusCodes.CREATED).json({ message: "product created succesfully", success: true })
+    }
+    catch (error) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: "Failed to create product",
+        success: false
+      })
+    }
+  });
 
 app.put(
   "/api/products/:id",

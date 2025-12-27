@@ -35,16 +35,16 @@ const formSchema = z.object({
     .min(20, "Description must be at least 20 characters.")
     .max(100, "Description must be at most 100 characters.").or(z.literal("")),
   price: z.coerce.number(),
-  image: z.url().optional().or(z.literal("")).default("")
+  image: z.file().optional()
 })
 
-export function CreateProductForm({ product, handleSubmit }: { product?: Product, handleSubmit: (value: { name: string, description?: string, price?: number, image?: string }) => Promise<void> }) {
+export function CreateProductForm({ product, handleSubmit }: { product?: Product, handleSubmit: (value: { name: string, description?: string, price?: number, image?: File }) => Promise<void> }) {
   const form = useForm({
     defaultValues: {
       name: product ? product.name : "",
       description: product ? product.description : "",
       price: product ? product.price : 0,
-      image: product ? product.image_url : ""
+      image: undefined,
     },
     validators: {
       onSubmit: formSchema,
@@ -159,28 +159,18 @@ export function CreateProductForm({ product, handleSubmit }: { product?: Product
             />
             <form.Field
               name="image"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Image URL</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder="eg: https://images.unsplash.com/photo-1527814050087-3793815479db"
-                      autoComplete="off"
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                )
-              }}
+              children={(field) => (
+                <Field>
+                  <FieldLabel>Image</FieldLabel>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      field.handleChange(e.target.files?.[0])
+                    }
+                  />
+                </Field>
+              )}
             />
           </FieldGroup>
         </form>
