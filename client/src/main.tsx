@@ -7,15 +7,15 @@ import Navbar from './components/navbar.tsx'
 import { Toaster } from './components/ui/sonner.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <BrowserRouter>
-    <StrictMode>
-      <div className='w-full flex flex-col '>
-        <Navbar />
-        <main className='flex w-full mx-auto px-4 max-w-7xl'>
-          <App />
-        </main>
-      </div>
-      <Toaster />
-    </StrictMode>
-  </BrowserRouter>
+	<BrowserRouter>
+		<StrictMode>
+			<div className='w-full flex flex-col '>
+				<Navbar />
+				<main className='flex w-full mx-auto  max-w-7xl'>
+					<App />
+				</main>
+			</div>
+			<Toaster />
+		</StrictMode>
+	</BrowserRouter>
 )

@@ -1,17 +1,14 @@
 import { Route, Routes } from "react-router-dom";
 import HomePage from "./pages/home";
-import ProductDetails from "./pages/product-details";
-import CreatePage from "./pages/create";
-import EditPage from "./pages/edit";
-
+import Shop from "./pages/shop";
 function App() {
   return (
-    <div className="w-full">
+    <div className="w-full p-0 m-0">
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/:id" element={<ProductDetails />} />
-        <Route path="/create" element={<CreatePage />} />
-        <Route path="/:id/edit" element={<EditPage />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/shop" element={<Shop />} />
       </Routes>
     </div>
   );
