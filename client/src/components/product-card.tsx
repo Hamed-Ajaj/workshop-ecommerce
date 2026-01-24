@@ -1,14 +1,21 @@
+import { Link } from "react-router-dom";
+
 export const ProductCard = ({
   image,
   title,
   price,
+  id,
 }: {
   image: string;
   title: string;
   price: string;
+  id: number;
 }) => {
   return (
-    <div className="group w-full rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm hover:shadow-lg transition-all duration-300 ease-out">
+    <Link
+      to={`/products/${id}`}
+      className="group w-full rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm hover:shadow-lg transition-all duration-300 ease-out"
+    >
       {/* Image wrapper */}
       <div className="relative h-56 md:h-64 lg:h-72 overflow-hidden">
         <img
@@ -48,6 +55,6 @@ export const ProductCard = ({
           {price}
         </p>
       </div>
-    </div>
+    </Link>
   );
 };

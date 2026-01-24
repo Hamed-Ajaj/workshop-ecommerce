@@ -81,6 +81,7 @@ export const ShopProducts = ({
               product.image_url ||
               "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg"
             }
+            id={product.id}
             price={product.price ? `$${product.price}` : "$0"}
             title={product.name}
           />

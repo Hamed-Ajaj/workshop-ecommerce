@@ -1,25 +1,28 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { SearchIcon, ShoppingCartIcon, User, Menu, X } from "lucide-react";
+import { useCartStore } from "@/stores/useCartStore";
 const Navbar = () => {
   const path = useLocation();
+  const items = useCartStore((state) => state.items);
+  const totalCart = items.reduce((sum, item) => sum + item.quantity, 0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  
+
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/shop", label: "Shop" },
     { to: "/new", label: "New Arrivals" },
     { to: "/sale", label: "Sale" },
   ];
-  
+
   return (
     <nav className="w-full py-3 md:py-4 px-4 md:px-6 border-b border-gray-200 bg-white sticky top-0 z-50">
       <div className="flex justify-between items-center max-w-5xl mx-auto">
         <Link to="/" className="text-xl md:text-2xl font-bold text-blue-500">
           LOGO
         </Link>
-        
+
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6 lg:gap-8">
           {navLinks.map((link) => (
@@ -27,8 +30,8 @@ const Navbar = () => {
               key={link.to}
               to={link.to}
               className={`text-sm lg:text-base transition-colors duration-200 ${
-                path.pathname === link.to 
-                  ? "font-semibold text-blue-500" 
+                path.pathname === link.to
+                  ? "font-semibold text-blue-500"
                   : "text-gray-600 hover:text-blue-500"
               }`}
             >
@@ -36,7 +39,7 @@ const Navbar = () => {
             </Link>
           ))}
         </nav>
-        
+
         {/* Desktop Icons */}
         <div className="hidden md:flex gap-4 lg:gap-6 items-center">
           <div className="relative">
@@ -44,8 +47,8 @@ const Navbar = () => {
               type="text"
               placeholder="Search..."
               className={`rounded-full border border-gray-200 px-4 py-2 pl-10 text-sm transition-all duration-200 ${
-                searchFocused 
-                  ? "border-blue-400 ring-2 ring-blue-100 w-48 lg:w-64" 
+                searchFocused
+                  ? "border-blue-400 ring-2 ring-blue-100 w-48 lg:w-64"
                   : "w-36 lg:w-48"
               }`}
               onFocus={() => setSearchFocused(true)}
@@ -58,14 +61,25 @@ const Navbar = () => {
               size={16}
             />
           </div>
-          <Link to="/cart" className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+          <Link
+            to="/cart"
+            className="relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+          >
             <ShoppingCartIcon size={20} className="text-gray-600" />
+            {totalCart > 0 ? (
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex justify-center items-center bg-black text-white">
+                {totalCart}
+              </div>
+            ) : null}{" "}
           </Link>
-          <Link to="/profile" className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+          <Link
+            to="/profile"
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+          >
             <User size={20} className="text-gray-600" />
           </Link>
         </div>
-        
+
         {/* Mobile Menu Button */}
         <button
           className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
@@ -78,7 +92,7 @@ const Navbar = () => {
           )}
         </button>
       </div>
-      
+
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden mt-4 pb-4 space-y-4 animate-fade-in">
@@ -88,8 +102,8 @@ const Navbar = () => {
                 key={link.to}
                 to={link.to}
                 className={`px-4 py-2 rounded-lg text-base transition-colors duration-200 ${
-                  path.pathname === link.to 
-                    ? "font-semibold text-blue-500 bg-blue-50" 
+                  path.pathname === link.to
+                    ? "font-semibold text-blue-500 bg-blue-50"
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
@@ -98,7 +112,7 @@ const Navbar = () => {
               </Link>
             ))}
           </nav>
-          
+
           {/* Mobile Search */}
           <div className="relative px-4">
             <input
@@ -111,18 +125,18 @@ const Navbar = () => {
               size={16}
             />
           </div>
-          
+
           {/* Mobile Icons */}
           <div className="flex justify-center gap-8 px-4">
-            <Link 
-              to="/cart" 
+            <Link
+              to="/cart"
               className="p-3 rounded-full hover:bg-gray-100 transition-colors duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
               <ShoppingCartIcon size={22} className="text-gray-600" />
             </Link>
-            <Link 
-              to="/profile" 
+            <Link
+              to="/profile"
               className="p-3 rounded-full hover:bg-gray-100 transition-colors duration-200"
               onClick={() => setMobileMenuOpen(false)}
             >
