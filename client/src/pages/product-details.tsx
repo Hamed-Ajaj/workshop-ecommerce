@@ -3,15 +3,19 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 
-// const colorOptions = [
-//   { name: "Onyx", value: "#0f172a" },
-//   { name: "Sand", value: "#d4b8a8" },
-//   { name: "Forest", value: "#14532d" },
-//   { name: "Crimson", value: "#b91c1c" },
-// ];
+const colorOptions = [
+  { name: "White", value: "#ffffff" },
+  { name: "Blue", value: "#2563eb" },
+  { name: "Green", value: "#16a34a" },
+  { name: "Black", value: "#0f172a" },
+];
+
+const sizeOptions = ["S", "M", "L", "XL"];
 
 export default function ProductDetails() {
   const [quantity, setQuantity] = useState<number>(1);
+  const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
+  const [selectedSize, setSelectedSize] = useState(sizeOptions[1]);
   const { id } = useParams();
   const productId = Number(id);
   const product = mockProducts.find((item) => item.id === productId);
@@ -67,20 +71,61 @@ export default function ProductDetails() {
             moments.
           </p>
 
-          {/* <div className="flex flex-col gap-3"> */}
-          {/*   <h2 className="text-sm font-semibold text-slate-800">Colors</h2> */}
-          {/*   <div className="flex flex-wrap gap-3"> */}
-          {/*     {colorOptions.map((color) => ( */}
-          {/*       <button */}
-          {/*         key={color.name} */}
-          {/*         type="button" */}
-          {/*         aria-label={color.name} */}
-          {/*         className="h-10 w-10 rounded-full border-2 border-slate-200 shadow-sm transition hover:scale-105" */}
-          {/*         style={{ backgroundColor: color.value }} */}
-          {/*       /> */}
-          {/*     ))} */}
-          {/*   </div> */}
-          {/* </div> */}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
+              <h2 className="text-sm font-semibold text-slate-800">Colors</h2>
+              <div className="flex flex-wrap gap-3">
+                {colorOptions.map((color) => {
+                  const isSelected = selectedColor.name === color.name;
+                  return (
+                    <button
+                      key={color.name}
+                      type="button"
+                      aria-label={color.name}
+                      onClick={() => setSelectedColor(color)}
+                      className={`flex h-10 w-10 items-center justify-center rounded-full border-2 shadow-sm transition ${
+                        isSelected
+                          ? "border-slate-900 ring-2 ring-slate-300"
+                          : "border-slate-200 hover:scale-105"
+                      }`}
+                    >
+                      <span
+                        className="h-7 w-7 rounded-full border border-slate-200"
+                        style={{ backgroundColor: color.value }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-500">
+                Selected: {selectedColor.name}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <h2 className="text-sm font-semibold text-slate-800">Size</h2>
+              <div className="flex flex-wrap gap-2">
+                {sizeOptions.map((size) => {
+                  const isSelected = selectedSize === size;
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setSelectedSize(size)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        isSelected
+                          ? "bg-slate-900 text-white"
+                          : "border border-slate-200 text-slate-700 hover:border-slate-400"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-500">Selected: {selectedSize}</p>
+            </div>
+          </div>
 
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-semibold text-slate-800">Quantity</h2>
@@ -113,11 +158,13 @@ export default function ProductDetails() {
                 className="flex-1 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-slate-800"
                 onClick={() =>
                   addProduct({
-                    id: String(product.id),
+                    id: `${product.id}-${selectedColor.name}-${selectedSize}`,
                     name: product.name,
                     price: product.price,
                     image: product.image_url,
-                  })
+                    color: selectedColor.name.toLowerCase(),
+                    size: selectedSize,
+                  }, quantity)
                 }
               >
                 Add to cart ({quantity} item{quantity === 1 ? "" : "s"})

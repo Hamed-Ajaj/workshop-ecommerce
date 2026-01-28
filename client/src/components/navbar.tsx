@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { SearchIcon, ShoppingCartIcon, User, Menu, X } from "lucide-react";
+import { SearchIcon, ShoppingCartIcon, Menu, X } from "lucide-react";
 import { useCartStore } from "@/stores/useCartStore";
 const Navbar = () => {
   const path = useLocation();
@@ -73,10 +73,10 @@ const Navbar = () => {
             ) : null}{" "}
           </Link>
           <Link
-            to="/profile"
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            to="/sign-in"
+            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-400 hover:text-blue-500"
           >
-            <User size={20} className="text-gray-600" />
+            Sign in
           </Link>
         </div>
 
@@ -136,11 +136,11 @@ const Navbar = () => {
               <ShoppingCartIcon size={22} className="text-gray-600" />
             </Link>
             <Link
-              to="/profile"
-              className="p-3 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              to="/sign-in"
+              className="px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 transition hover:border-blue-400 hover:text-blue-500"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <User size={22} className="text-gray-600" />
+              Sign in
             </Link>
           </div>
         </div>
