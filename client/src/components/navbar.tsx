@@ -20,7 +20,7 @@ const Navbar = () => {
     <nav className="w-full py-3 md:py-4 px-4 md:px-6 border-b border-gray-200 bg-white sticky top-0 z-50">
       <div className="flex justify-between items-center max-w-5xl mx-auto">
         <Link to="/" className="text-xl md:text-2xl font-bold text-blue-500">
-          LOGO
+          AESTHETIQUE
         </Link>
 
         {/* Desktop Navigation */}
