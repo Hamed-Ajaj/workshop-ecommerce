@@ -5,6 +5,8 @@ import ProductDetails from "./pages/product-details";
 import CartPage from "./pages/cart";
 import Footer from "./components/footer";
 import NotFoundPage from "./pages/not-found";
+import SignInPage from "./pages/signin";
+import SignUpPage from "./pages/signup";
 function App() {
   return (
     <div className="min-h-screen w-full p-0 m-0 flex flex-col">
@@ -14,6 +16,8 @@ function App() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/products/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/sign-in" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
