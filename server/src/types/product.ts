@@ -5,14 +5,15 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  image_url: string;
+  image: string;
+  category: string;
   created_at: Date;
 }
 
 export interface TaskRow extends RowDataPacket {
   id: number;
   title: string;
-  priority: number;
+  priority: "Low" | "Medium" | "High";
   status: string;
 }
 

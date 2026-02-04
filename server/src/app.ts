@@ -27,7 +27,14 @@ testDB();
 
 app.get("/api/products", async (req, res) => {
   try {
-    const [rows] = await db.query<RowDataPacket[]>("SELECT * FROM products");
+    const category =
+      typeof req.query.category === "string" ? req.query.category.trim() : "";
+    const [rows] = await db.query<RowDataPacket[]>(
+      category
+        ? "SELECT * FROM products WHERE category = ?"
+        : "SELECT * FROM products",
+      category ? [category] : [],
+    );
     res.json(rows as Product[]);
   } catch (err) {
     res.status(500).json({ error: getErrorMessage(err) });
@@ -62,13 +69,33 @@ app.get("/api/tasks", async (req, res) => {
 
 // POST New Task
 app.post("/api/tasks", async (req, res) => {
-  const { title, priority } = req.body;
+  const { title, priority, status } = req.body as {
+    title?: string;
+    priority?: "Low" | "Medium" | "High";
+    status?: string;
+  };
+  if (!title || typeof title !== "string") {
+    return res.status(400).json({ error: "Title is required" });
+  }
+  const safePriority =
+    priority === "Low" || priority === "Medium" || priority === "High"
+      ? priority
+      : "Medium";
+  const safeStatus =
+    status === "Pending" || status === "In Progress" || status === "Completed"
+      ? status
+      : "Pending";
   try {
     const [result] = await db.query<ResultSetHeader>(
-      "INSERT INTO tasks (title, priority) VALUES (?, ?)",
-      [title, priority],
+      "INSERT INTO tasks (title, priority, status) VALUES (?, ?, ?)",
+      [title, safePriority, safeStatus],
     );
-    res.status(201).json({ id: result.insertId, title, priority });
+    res.status(201).json({
+      id: result.insertId,
+      title,
+      priority: safePriority,
+      status: safeStatus,
+    });
   } catch (err) {
     res.status(500).json({ error: getErrorMessage(err) });
   }
