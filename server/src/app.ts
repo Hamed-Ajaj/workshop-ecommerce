@@ -1,194 +1,158 @@
 import express from "express";
-import cors from "cors"
-import multer from "multer"
-import { createProductSchema, querySchema, updateProductSchema } from "./schemas/products.schema";
-import validate from 'express-zod-safe';
-import { db } from "./db";
-import { StatusCodes } from "http-status-codes";
-import { Product } from "./types/product";
-import { ResultSetHeader, RowDataPacket } from "mysql2";
-import z from "zod";
+import cors from "cors";
+import { db, testDB } from "./db";
+import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
+import type {
+  OrderItemInput,
+  Product,
+  TaskRow,
+  UserRow,
+} from "./types/product";
+
+const getErrorMessage = (err: unknown) =>
+  err instanceof Error ? err.message : "Unknown error";
+
 export const app = express();
 
+app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:4173", "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "http://localhost:5173",
+    methods: ["POST", "GET", "PUT", "DELETE"],
     credentials: true,
   }),
 );
-app.use(express.json());
-app.use("/uploads", express.static("uploads"))
 
-const upload = multer({
-  dest: "uploads/",
-})
+testDB();
 
-app.get('/api/products', validate({ query: querySchema }), async (req, res) => {
-
-  const { search, order, sort } = req.query;
-
+app.get("/api/products", async (req, res) => {
   try {
-    let sql = "SELECT * FROM products"
-    const params: any[] = []
-
-    if (search) {
-      sql += " WHERE name LIKE ? OR description LIKE ?"
-      params.push(`%${search}%`, `%${search}%`)
-    }
-
-    if (sort === "price") {
-      sql += ` ORDER BY price ${order}`
-    } else {
-      sql += ` ORDER BY created_at ${order}`
-    }
-
-    const [rows] = await db.query<(Product & RowDataPacket)[]>(
-      sql,
-      params
-    )
-
-    res.status(StatusCodes.OK).json({
-      products: rows,
-      success: true,
-    })
+    const [rows] = await db.query<RowDataPacket[]>("SELECT * FROM products");
+    res.json(rows as Product[]);
+  } catch (err) {
+    res.status(500).json({ error: getErrorMessage(err) });
   }
-  catch (error) {
-    console.error("Error fetching products:", error)
+});
 
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: "Failed to fetch products",
-      success: false
-    })
-  }
-
-})
-
-app.get('/api/products/:id', validate({
-  params: z.object({
-    id: z.coerce.number()
-  })
-}), async (req, res) => {
+// GET Single Product
+app.get("/api/products/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const sql = 'SELECT * FROM products WHERE id = ?';
-    const [rows] = await db.query<(Product & RowDataPacket)[]>(sql, [id]);
-
-    if (rows.length === 0) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: "Product not found",
-        success: false,
-      })
-    }
-    res.json({ product: rows[0], success: true })
+    const [rows] = await db.query<RowDataPacket[]>(
+      "SELECT * FROM products WHERE id = ?",
+      [req.params.id],
+    );
+    if (rows.length === 0)
+      return res.status(404).json({ message: "Not found" });
+    res.json(rows[0] as Product);
+  } catch (err) {
+    res.status(500).json({ error: getErrorMessage(err) });
   }
-  catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: "Failed to fetch product",
-      success: false
-    })
-  }
-})
+});
 
-app.post('/api/products',
-  upload.single("image"),
-  validate({ body: createProductSchema }), async (req, res) => {
-
-    const { name, description, price } = req.body;
-
-    if (req.file && !req.file.mimetype.startsWith("image/")) {
-      return res.status(400).json({ message: "Invalid file type" })
-    }
-
-    let image_url: string | null = null
-    if (req.file) {
-      image_url = `/uploads/${req.file.filename}`
-    }
-
-    try {
-      const sql = 'INSERT INTO products (name, description, price, image_url) VALUES (?, ?, ?, ?)';
-      const result = await db.query(sql, [name, description, price, image_url]);
-      res.status(StatusCodes.CREATED).json({ message: "product created succesfully", success: true })
-    }
-    catch (error) {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: "Failed to create product",
-        success: false
-      })
-    }
-  });
-
-app.put(
-  "/api/products/:id",
-  upload.single("image"),
-  async (req, res) => {
-    try {
-      const { name, description, price } = req.body
-      const { id } = req.params
-
-      if (req.file && !req.file.mimetype.startsWith("image/")) {
-        return res.status(400).json({ message: "Invalid file type" })
-      }
-
-      const [rows] = await db.query<any[]>(
-        "SELECT image_url FROM products WHERE id = ?",
-        [id]
-      )
-
-      if (rows.length === 0) {
-        return res.status(StatusCodes.NOT_FOUND).json({
-          message: "Product not found",
-          success: false,
-        })
-      }
-
-      // by default it's the old image, if the use change it it will be updated
-      let image_url = rows[0].image_url
-
-      if (req.file) {
-        image_url = `/uploads/${req.file.filename}`
-      }
-
-      const [result] = await db.query<ResultSetHeader>(
-        `
-        UPDATE products
-        SET name = ?, description = ?, price = ?, image_url = ?
-        WHERE id = ?
-        `,
-        [name, description, price, image_url, id]
-      )
-
-      return res.sendStatus(StatusCodes.NO_CONTENT)
-    } catch (error) {
-      console.error("Update product error:", error)
-
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error,
-        success: false,
-      })
-    }
-  }
-)
-
-app.delete('/api/products/:id', validate({ params: z.object({ id: z.coerce.number() }) }), async (req, res) => {
-  const { id } = req.params
+app.get("/api/tasks", async (req, res) => {
   try {
-    const sql = 'DELETE FROM products WHERE id = ?';
-    const [result] = await db.query<ResultSetHeader>(sql, [id]);
+    const [rows] = await db.query<TaskRow[]>(
+      "SELECT * FROM tasks ORDER BY id DESC",
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: getErrorMessage(err) });
+  }
+});
 
-    if (result.affectedRows === 0) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: "Product not found",
-        success: false,
-      })
+// POST New Task
+app.post("/api/tasks", async (req, res) => {
+  const { title, priority } = req.body;
+  try {
+    const [result] = await db.query<ResultSetHeader>(
+      "INSERT INTO tasks (title, priority) VALUES (?, ?)",
+      [title, priority],
+    );
+    res.status(201).json({ id: result.insertId, title, priority });
+  } catch (err) {
+    res.status(500).json({ error: getErrorMessage(err) });
+  }
+});
+
+// PUT Update Task Status
+app.put("/api/tasks/:id", async (req, res) => {
+  const { status } = req.body;
+  try {
+    await db.query("UPDATE tasks SET status = ? WHERE id = ?", [
+      status,
+      req.params.id,
+    ]);
+    res.json({ message: "Updated" });
+  } catch (err) {
+    res.status(500).json({ error: getErrorMessage(err) });
+  }
+});
+
+// DELETE Task
+app.delete("/api/tasks/:id", async (req, res) => {
+  try {
+    await db.query("DELETE FROM tasks WHERE id = ?", [req.params.id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: getErrorMessage(err) });
+  }
+});
+
+// Register User
+app.post("/api/auth/register", async (req, res) => {
+  const { name, email, password } = req.body;
+  try {
+    const [result] = await db.query<ResultSetHeader>(
+      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+      [name, email, password], // Note: In production, hash the password!
+    );
+    res.status(201).json({ id: result.insertId, name, email });
+  } catch (err) {
+    res.status(500).json({ error: "Email already exists" });
+  }
+});
+
+// Login User
+app.post("/api/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const [users] = await db.query<UserRow[]>(
+      "SELECT * FROM users WHERE email = ? AND password = ?",
+      [email, password],
+    );
+    if (users.length === 0)
+      return res.status(401).json({ error: "Invalid credentials" });
+    res.json({ id: users[0].id, name: users[0].name, email: users[0].email });
+  } catch (err) {
+    res.status(500).json({ error: getErrorMessage(err) });
+  }
+});
+
+// Place Order
+app.post("/api/orders", async (req, res) => {
+  const { userId, totalAmount, items } = req.body as {
+    userId: number;
+    totalAmount: number;
+    items: OrderItemInput[];
+  }; // items = [{productId, quantity, price}, ...]
+  try {
+    // 1. Create the Order
+    const [orderResult] = await db.query<ResultSetHeader>(
+      "INSERT INTO orders (user_id, total_amount) VALUES (?, ?)",
+      [userId, totalAmount],
+    );
+    const orderId = orderResult.insertId;
+
+    // 2. Create Order Items (Loop through items)
+    for (const item of items) {
+      await db.query(
+        "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
+        [orderId, item.productId, item.quantity, item.price],
+      );
     }
 
-    res.status(StatusCodes.OK).json({ message: "product deleted", success: true })
+    res.status(201).json({ message: "Order placed successfully", orderId });
+  } catch (err) {
+    res.status(500).json({ error: getErrorMessage(err) });
   }
-  catch {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: "Failed to Delete product",
-      success: false
-    })
-  }
-})
+});
