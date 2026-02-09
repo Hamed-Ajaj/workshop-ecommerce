@@ -202,7 +202,7 @@ export default function ProductDetails() {
                     {
                       id: `${product.id}-${selectedColor.name}-${selectedSize}`,
                       name: product.name,
-                      price: product.price,
+                      price: product?.price,
                       image:
                         product.image_url ||
                         product.image ||
