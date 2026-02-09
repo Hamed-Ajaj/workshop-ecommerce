@@ -1,21 +1,26 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { BrowserRouter } from 'react-router-dom'
-import Navbar from './components/navbar.tsx'
-import { Toaster } from './components/ui/sonner.tsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.tsx";
+import { BrowserRouter } from "react-router-dom";
+import Navbar from "./components/navbar.tsx";
+import { Toaster } from "./components/ui/sonner.tsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')!).render(
 	<BrowserRouter>
 		<StrictMode>
-			<div className='w-full flex flex-col'>
-				<Navbar />
-				<main className='w-full'>
-					<App />
-				</main>
-			</div>
-			<Toaster />
+			<QueryClientProvider client={queryClient}>
+				<div className="w-full flex flex-col">
+					<Navbar />
+					<main className="w-full">
+						<App />
+					</main>
+				</div>
+				<Toaster />
+			</QueryClientProvider>
 		</StrictMode>
 	</BrowserRouter>
 )

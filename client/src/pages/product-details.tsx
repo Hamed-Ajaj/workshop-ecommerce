@@ -1,7 +1,11 @@
-import { mockProducts } from "@/constants";
 import { useCartStore } from "@/stores/useCartStore";
+import type { Product } from "@/types/product";
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { client } from "@/lib/axios";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { toast } from "sonner";
 
 const colorOptions = [
   { name: "White", value: "#ffffff" },
@@ -17,14 +21,41 @@ export default function ProductDetails() {
   const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
   const [selectedSize, setSelectedSize] = useState(sizeOptions[1]);
   const { id } = useParams();
+  const navigate = useNavigate();
+  const token = useAuthStore((state) => state.token);
   const productId = Number(id);
-  const product = mockProducts.find((item) => item.id === productId);
   const addProduct = useCartStore((state) => state.addItem);
 
-  if (!product) {
+  const {
+    data: product,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["product", productId],
+    enabled: Number.isFinite(productId) && productId > 0,
+    queryFn: async () => {
+      const { data } = await client.get<Product>(`/products/${productId}`);
+      return {
+        ...data,
+        image_url: data.image_url ?? data.image,
+      };
+    },
+  });
+
+  if (isLoading) {
     return (
       <main className="max-w-5xl mx-auto px-4 py-12">
-        <p className="text-lg text-slate-600">Product not found.</p>
+        <p className="text-lg text-slate-600">Loading product...</p>
+      </main>
+    );
+  }
+
+  if (!product || error) {
+    return (
+      <main className="max-w-5xl mx-auto px-4 py-12">
+        <p className="text-lg text-slate-600">
+          {error instanceof Error ? error.message : "Product not found."}
+        </p>
       </main>
     );
   }
@@ -35,7 +66,11 @@ export default function ProductDetails() {
         <section className="grid gap-4">
           <div className="relative overflow-hidden rounded-3xl bg-slate-100">
             <img
-              src={product.image_url}
+              src={
+                product.image_url ||
+                product.image ||
+                "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg"
+              }
               alt={product.name}
               className="h-[420px] w-full object-cover"
             />
@@ -156,16 +191,29 @@ export default function ProductDetails() {
               <button
                 type="button"
                 className="flex-1 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-slate-800"
-                onClick={() =>
-                  addProduct({
-                    id: `${product.id}-${selectedColor.name}-${selectedSize}`,
-                    name: product.name,
-                    price: product.price,
-                    image: product.image_url,
-                    color: selectedColor.name.toLowerCase(),
-                    size: selectedSize,
-                  }, quantity)
-                }
+                onClick={() => {
+                  if (!token) {
+                    toast.error("Sign in to add items to your cart");
+                    navigate("/sign-in");
+                    return;
+                  }
+
+                  addProduct(
+                    {
+                      id: `${product.id}-${selectedColor.name}-${selectedSize}`,
+                      name: product.name,
+                      price: product.price,
+                      image:
+                        product.image_url ||
+                        product.image ||
+                        "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg",
+                      color: selectedColor.name.toLowerCase(),
+                      size: selectedSize,
+                    },
+                    quantity,
+                  );
+                  toast.success("Added to cart");
+                }}
               >
                 Add to cart ({quantity} item{quantity === 1 ? "" : "s"})
               </button>

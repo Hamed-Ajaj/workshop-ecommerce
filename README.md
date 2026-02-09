@@ -17,3 +17,9 @@ cd server
 npm install
 npm run dev
 ```
+
+Create a `.env` file in `server/` with:
+
+```bash
+JWT_SECRET=your-secret-here
+```

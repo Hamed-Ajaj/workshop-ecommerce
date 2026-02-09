@@ -28,7 +28,12 @@ const ProductList = () => {
     )
 
     const data = await res.json()
-    setProducts(data.products)
+    const list = Array.isArray(data) ? data : data.products || []
+    const normalized = list.map((product: Product) => ({
+      ...product,
+      image_url: product.image_url ?? product.image,
+    }))
+    setProducts(normalized)
     setLoading(false)
   }
 

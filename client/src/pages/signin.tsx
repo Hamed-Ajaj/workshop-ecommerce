@@ -1,6 +1,40 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { client } from "@/lib/axios";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { toast } from "sonner";
+import { useForm } from "@tanstack/react-form";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
 const SignInPage = () => {
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
+
+  const loginMutation = useMutation({
+    mutationFn: async (values: { email: string; password: string }) => {
+      const { data } = await client.post("/auth/login", values);
+      return data as { user: { id: number; name: string; email: string }; token: string };
+    },
+    onSuccess: (data) => {
+      setAuth(data.user, data.token);
+      toast.success("Signed in successfully");
+      navigate("/shop");
+    },
+    onError: (err) => {
+      toast.error(getApiErrorMessage(err));
+    },
+  });
+
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    onSubmit: async ({ value }) => {
+      await loginMutation.mutateAsync(value);
+    },
+  });
+
   return (
     <main className="flex min-h-[70vh] items-center justify-center px-4 py-16">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-sm">
@@ -13,28 +47,47 @@ const SignInPage = () => {
             Enter your details to continue shopping.
           </p>
         </div>
-        <form className="mt-8 flex flex-col gap-4">
-          <label className="space-y-2 text-sm text-foreground">
-            <span>Email</span>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              className="h-11 w-full rounded-lg border border-input bg-transparent px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-foreground">
-            <span>Password</span>
-            <input
-              type="password"
-              placeholder="••••••••"
-              className="h-11 w-full rounded-lg border border-input bg-transparent px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-          </label>
+        <form
+          className="mt-8 flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            form.handleSubmit();
+          }}
+        >
+          <form.Field name="email">
+            {(field) => (
+              <label className="space-y-2 text-sm text-foreground">
+                <span>Email</span>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  className="h-11 w-full rounded-lg border border-input bg-transparent px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+                />
+              </label>
+            )}
+          </form.Field>
+          <form.Field name="password">
+            {(field) => (
+              <label className="space-y-2 text-sm text-foreground">
+                <span>Password</span>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  className="h-11 w-full rounded-lg border border-input bg-transparent px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+                />
+              </label>
+            )}
+          </form.Field>
           <button
             type="submit"
-            className="h-11 w-full rounded-full bg-foreground text-sm font-semibold text-background transition hover:opacity-90"
+            disabled={loginMutation.isPending}
+            className="h-11 w-full rounded-full bg-foreground text-sm font-semibold text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Sign in
+            {loginMutation.isPending ? "Signing in..." : "Sign in"}
           </button>
         </form>
         <p className="mt-6 text-center text-sm text-muted-foreground">

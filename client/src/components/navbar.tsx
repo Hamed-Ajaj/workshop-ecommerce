@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { SearchIcon, ShoppingCartIcon, Menu, X } from "lucide-react";
 import { useCartStore } from "@/stores/useCartStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 const Navbar = () => {
   const path = useLocation();
   const items = useCartStore((state) => state.items);
+  const user = useAuthStore((state) => state.user);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const totalCart = items.reduce((sum, item) => sum + item.quantity, 0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -72,12 +75,22 @@ const Navbar = () => {
               </div>
             ) : null}{" "}
           </Link>
-          <Link
-            to="/sign-in"
-            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-400 hover:text-blue-500"
-          >
-            Sign in
-          </Link>
+          {user ? (
+            <button
+              type="button"
+              onClick={clearAuth}
+              className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-400 hover:text-blue-500"
+            >
+              Sign out
+            </button>
+          ) : (
+            <Link
+              to="/sign-in"
+              className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-400 hover:text-blue-500"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -135,13 +148,26 @@ const Navbar = () => {
             >
               <ShoppingCartIcon size={22} className="text-gray-600" />
             </Link>
-            <Link
-              to="/sign-in"
-              className="px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 transition hover:border-blue-400 hover:text-blue-500"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Sign in
-            </Link>
+            {user ? (
+              <button
+                type="button"
+                onClick={() => {
+                  clearAuth();
+                  setMobileMenuOpen(false);
+                }}
+                className="px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 transition hover:border-blue-400 hover:text-blue-500"
+              >
+                Sign out
+              </button>
+            ) : (
+              <Link
+                to="/sign-in"
+                className="px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 transition hover:border-blue-400 hover:text-blue-500"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       )}

@@ -2,14 +2,7 @@ import { useMemo } from "react";
 import { ProductCard } from "@/components/product-card";
 import { ProductCardSkeleton } from "@/components/product-card-skeleton";
 import { ShopHeader } from "./shop-header";
-
-interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  price?: number;
-  image_url?: string;
-}
+import type { Product } from "@/types/product";
 
 interface ShopProductsProps {
   products: Product[];
@@ -78,6 +71,7 @@ export const ShopProducts = ({
           <ProductCard
             key={product.id}
             image={
+              product.image ||
               product.image_url ||
               "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg"
             }

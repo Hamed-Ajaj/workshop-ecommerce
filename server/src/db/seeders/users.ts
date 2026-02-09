@@ -1,11 +1,19 @@
 import type { ResultSetHeader } from "mysql2/promise";
 import { db } from "../index";
 import { users } from "./data";
+import bcrypt from "bcryptjs";
 
 export const seedUsers = async () => {
+  const hashedUsers = await Promise.all(
+    users.map(async (user) => ({
+      ...user,
+      password: await bcrypt.hash(user.password, 10),
+    })),
+  );
+
   await db.query<ResultSetHeader>(
     "INSERT INTO users (name, email, password) VALUES ?",
-    [users.map((user) => [user.name, user.email, user.password])],
+    [hashedUsers.map((user) => [user.name, user.email, user.password])],
   );
 };
 

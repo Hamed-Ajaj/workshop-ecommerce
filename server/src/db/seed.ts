@@ -1,6 +1,7 @@
 import type { ResultSetHeader } from "mysql2/promise";
 import { db } from "./index";
-import { products, tasks, users } from "./seeders/data";
+import { products, users } from "./seeders/data";
+import bcrypt from "bcryptjs";
 
 const buildIds = (firstId: number, count: number) =>
   Array.from({ length: count }, (_, index) => firstId + index);
@@ -14,12 +15,18 @@ const seedAll = async () => {
     await connection.query("TRUNCATE TABLE orders");
     await connection.query("TRUNCATE TABLE products");
     await connection.query("TRUNCATE TABLE users");
-    await connection.query("TRUNCATE TABLE tasks");
     await connection.query("SET FOREIGN_KEY_CHECKS = 1");
+
+    const hashedUsers = await Promise.all(
+      users.map(async (user) => ({
+        ...user,
+        password: await bcrypt.hash(user.password, 10),
+      })),
+    );
 
     const [userResult] = await connection.query<ResultSetHeader>(
       "INSERT INTO users (name, email, password) VALUES ?",
-      [users.map((user) => [user.name, user.email, user.password])],
+      [hashedUsers.map((user) => [user.name, user.email, user.password])],
     );
     const userIds = buildIds(userResult.insertId, userResult.affectedRows);
 
@@ -54,11 +61,6 @@ const seedAll = async () => {
           [orderIds[0], productIds[1], 1, products[1].price],
         ],
       ],
-    );
-
-    await connection.query<ResultSetHeader>(
-      "INSERT INTO tasks (title, priority, status) VALUES ?",
-      [tasks.map((task) => [task.title, task.priority, task.status])],
     );
 
     await connection.commit();
